@@ -44,7 +44,9 @@ def home():
         f"All available routes:<br/>"
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
-        f"/api/v1.0/tobs"
+        f"/api/v1.0/tobs<br/>"
+        f"/api/v1.0/<start><br/>"
+        f"/api/v1.0/<start>/<end>"
     )
 
 
@@ -93,7 +95,7 @@ def stations():
 
 
 @app.route("/api/v1.0/tobs")
-def stations():
+def tobs():
     # Create a session (link) from Python to the DB
     session = Session(engine)
 
@@ -112,9 +114,7 @@ def stations():
 
     # Query the dates and temperature observations of the most-active station for the previous year of data
     tobs_query = (
-        session.query(
-            Measurement.stations, Measurement.pcrp, Measurement.date, Measurement.tobs
-        )
+        session.query(Measurement.stations, Measurement.date, Measurement.tobs)
         .filter(Measurement.date >= first_date)
         .filter(Measurement.station == most_active_station)
         .all()
@@ -123,4 +123,72 @@ def stations():
     # Close the session
     session.close()
 
+    # Convert the tobs query to a dictionary
+    query_list = []
+    for station, date, tobs in tobs_query:
+        query_dict = {}
+        query_dict["station"] = station
+        query_dict["date"] = date
+        query_dict["tobs"] = tobs
+
+        query_list.append(query_dict)
+
     # Return a JSON list of temperature observations for the previous year
+    return jsonify(query_list)
+
+
+@app.route("/api/v1.0/<start>")
+def start(start):
+    # Create a session (link) from Python to the DB
+    session = Session(engine)
+
+    # Calculate TMIN, TAVG, and TMAX for all the dates greater than or equal to the start date
+    start_query = (
+        session.query(
+            func.min(Measurement.tobs),
+            func.avg(Measurement.tobs),
+            func.max(Measurement.tobs),
+        )
+        .filter(Measurement.date >= start)
+        .all()
+    )
+
+    # Close the session
+    session.close()
+
+    # Convert list of tuples into normal list
+    start_results = list(np.ravel(start_query))
+
+    # Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a specified start date
+    return jsonify(start_results)
+
+
+@app.route("/api/v1.0/<start>/<end>")
+def start_end(start, end):
+    # Create a session (link) from Python to the DB
+    session = Session(engine)
+
+    # Calculate TMIN, TAVG, and TMAX for all the dates greater than or equal to the start date and less than or equal to the end date
+    start_end_query = (
+        session.query(
+            func.min(Measurement.tobs),
+            func.avg(Measurement.tobs),
+            func.max(Measurement.tobs),
+        )
+        .filter(Measurement.date >= start)
+        .filter(Measurement.date <= end)
+        .all()
+    )
+
+    # Close the session
+    session.close()
+
+    # Convert list of tuples into normal list
+    start_end_results = list(np.ravel(start_end_query))
+
+    # Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a specified start and end date
+    return jsonify(start_end_results)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
