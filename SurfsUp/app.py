@@ -12,7 +12,10 @@ import datetime as dt
 #################################################
 # Database Setup
 #################################################
-engine = create_engine("sqlite:///Resources/hawaii.sqlite")
+engine = create_engine(
+    "sqlite:///C:\\Users\\brnka\\OneDrive\\Desktop\\U of M Bootcamp\\Classwork\\Module 10 - Advanced SQL\\sqlalchemy-challenge\\sqlalchemy-challenge\\SurfsUp\\Resources\\hawaii.sqlite"
+)
+# "C:\Users\brnka\OneDrive\Desktop\U of M Bootcamp\Classwork\Module 10 - Advanced SQL\sqlalchemy-challenge\sqlalchemy-challenge\SurfsUp\Resources\hawaii.sqlite"
 
 # reflect an existing database into a new model
 Base = automap_base()
